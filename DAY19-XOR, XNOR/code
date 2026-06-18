@@ -1,0 +1,24 @@
+design.sv
+module Xor_Xnor(input a,b, output x,y);
+    assign x= (a ^ b) ;
+    assign y= !(a ^ b);
+endmodule
+
+
+
+testbench.sv
+module tb;
+    reg a,b;
+    wire x,y;
+    Xor_Xnor u1(a,b,x,y);
+    initial begin
+        $dumpvars(0, tb);
+        $monitor($time," | XOR: a=%b b=%b -> x=%b | XNOR: a=%b b=%b -> y=%b |",
+                 a,b,x,a,b,y);
+        a=0;b=0; #10;
+        a=0;b=1; #10;
+        a=1;b=0; #10;
+        a=1;b=1; #10;
+        $finish ;
+    end
+endmodule
