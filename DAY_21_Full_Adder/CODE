@@ -1,0 +1,28 @@
+design.sv
+module full_adder(input a,b,cin, output s,c);
+    assign s= (a ^ b ^ cin) ;
+    assign c= (a & b ) | (b & cin) |(a & cin);
+endmodule
+
+testbench.sv
+module tb;
+    reg a,b,cin;
+    wire s,c;
+    full_adder u1(a,b,cin,s,c);
+    initial begin
+        $dumpvars(0, tb);
+        $monitor($time,"|  a=%b b=%b  cin=%b sum:-> s=%b
+               carry:-> c=%b|",a,b,cin,s,c);
+
+        a = 0; b = 0; cin = 0; #10;
+        a = 0; b = 0; cin = 1; #10;
+        a = 0; b = 1; cin = 0; #10;
+        a = 0; b = 1; cin = 1; #10;
+        a = 1; b = 0; cin = 0; #10;
+        a = 1; b = 0; cin = 1; #10;
+        a = 1; b = 1; cin = 0; #10;
+        a = 1; b = 1; cin = 1; #10;
+
+        $finish;
+    end
+endmodule
