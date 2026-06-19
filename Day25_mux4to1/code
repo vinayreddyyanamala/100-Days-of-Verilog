@@ -1,0 +1,47 @@
+Design code
+module mux4to1 #(parameter N = 4)
+(
+    input  [N-1:0] D0,
+    input  [N-1:0] D1,
+    input  [N-1:0] D2,
+    input  [N-1:0] D3,
+    input  [1:0]   S,
+    output reg [N-1:0] Y);
+always @(*) begin
+    case(S)
+        2'b00: Y = D0;
+        2'b01: Y = D1;
+        2'b10: Y = D2;
+        2'b11: Y = D3;
+        default: Y =0;
+    endcase
+end
+endmodule
+
+  
+  testbenchcode
+module tb;
+parameter N = 4;
+reg  [N-1:0] D0, D1, D2, D3;
+reg  [1:0]   S;
+wire [N-1:0] Y;
+  mux4to1 #(4) dut (D0,D1,D2,D3,S,Y);
+initial begin
+   $dumpvars(1, tb);
+    $monitor("T=%0t | S=%b | D0=%b D1=%b D2=%b D3=%b | Y=%b", $time, S, D0, D1, D2, D3, Y);
+
+    D0 = 4'b0001;
+    D1 = 4'b0010;
+    D2 = 4'b0100;
+    D3 = 4'b1000;
+
+    S = 2'b00; #10;
+    S = 2'b01; #10;
+    S = 2'b10; #10;
+    S = 2'b11; #10;
+    S = 2'bxx; #10;
+    S = 2'bzz; #10;
+    $finish;
+end
+endmodule
+  
