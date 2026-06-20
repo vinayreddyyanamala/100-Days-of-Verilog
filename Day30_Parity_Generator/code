@@ -1,0 +1,27 @@
+RTL Code
+module odd_parity_gen #(parameter N = 4)(
+    input  [N-1:0] D,
+    output   P);
+
+assign P = ~(^D);
+endmodule
+
+
+Testbench
+module tb;
+parameter N = 4;
+reg  [N-1:0] D;
+wire P;
+parity_gen #(N) dut (D,P);
+initial begin
+    $monitor("T=%0t D=%b P=%b", $time, D, P);
+     $dumpvars(1, tb);
+    D = 4'b0000; #10;
+    D = 4'b0001; #10;
+    D = 4'b0011; #10;
+    D = 4'b0111; #10;
+    D = 4'b1111; #10;
+
+    $finish;
+end
+endmodule
