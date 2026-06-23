@@ -1,0 +1,64 @@
+design code :
+  module alu #(parameter N = 8)(
+    input  [N-1:0] A, B,
+    input  [3:0]   ALU_Sel,
+    output reg [N-1:0] ALU_Out,
+    output reg CarryOut,Overflow,
+    output Zero,Negative );
+  always @(*)
+      begin
+      ALU_Out   = 0;
+      CarryOut  = 0;
+      Overflow  = 0;
+    case(ALU_Sel)
+        4'b0000: ALU_Out = A + B;					//add
+		4'b0001: ALU_Out = A - B;					// sub
+	    4'b0010: ALU_Out = A * B;                    // MUL
+        4'b0011: ALU_Out = (B != 0) ? A/B : 0;      // DIV
+        4'b0100: ALU_Out = A << 1;                  // LSL
+        4'b0101: ALU_Out = A >> 1;                  // LSR
+        4'b0110: ALU_Out = {A[N-2:0],A[N-1]};       // RO
+        4'b0111: ALU_Out = {A[0],A[N-1:1]};         // ROR
+        4'b1000: ALU_Out = A & B;                   // AND
+        4'b1001: ALU_Out = A | B;                   // OR
+        4'b1010: ALU_Out = A ^ B;                   // XOR
+        4'b1011: ALU_Out = ~(A | B);                // NOR
+        4'b1100: ALU_Out = ~(A & B);                // NAND
+        4'b1101: ALU_Out = ~(A ^ B);                // XNOR
+        4'b1110: ALU_Out = (A > B) ? 1 : 0;         // GREATER
+        4'b1111: ALU_Out = (A == B) ? 1 : 0;        // EQUAL
+        default: ALU_Out = 0;
+    endcase
+end
+assign Zero     = (ALU_Out == 0);
+assign Negative = ALU_Out[N-1];
+endmodule
+
+
+
+
+
+
+  testbench code :
+  module tb;
+reg  [7:0] A, B;
+reg  [3:0] ALU_Sel;
+wire [7:0] ALU_Out;
+wire CarryOut;
+wire Zero;
+wire Negative;
+wire Overflow;
+integer i;
+alu #(8) dut (A,B,ALU_Sel,ALU_Out,CarryOut,Zero,Negative,Overflow);
+initial begin
+  $dumpvars(1, tb);
+    $monitor("T=%0t A=%0d B=%0d Sel=%b Out=%0d C=%b Z=%b N=%b V=%b",$time, A, B, ALU_Sel,ALU_Out, CarryOut, Zero, Negative, Overflow );
+    A = 8'd10;
+    B = 8'd2;
+    for(i=0; i<16; i=i+1)
+    begin
+        ALU_Sel = i;#10;
+    end
+    $finish;
+end
+endmodule
