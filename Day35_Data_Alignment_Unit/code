@@ -1,0 +1,69 @@
+Design code :
+module data_alignment_unit #(parameter N = 8)
+  (
+    input  [N-1:0] A,
+    input  [2:0] Shift,
+    input  [2:0] Mode,
+    output reg [N-1:0] Y);
+always @(*) begin
+ 
+  case(Mode)
+3'b000 : Y = A << Shift;                       // Left Shift
+3'b001 : Y = A >> Shift;                       // Right Shift
+3'b010 : Y = (A << Shift) | (A >> (N-Shift)); // Rotate Left
+3'b011 : Y = (A >> Shift) | (A << (N-Shift)); // Rotate Right
+3'b100 : Y = {A[N-2:0],A[N-1]};               // Rotate Left by 1
+3'b101 : Y = {A[0],A[N-1:1]};                 // Rotate Right by 1
+3'b110 : Y = A;                               // Pass Through
+3'b111 : Y = ~A;                              // Bitwise NOT
+default: Y = A;
+ 
+  endcase
+end
+
+endmodule
+
+
+testbench code:
+module tb;
+reg  [7:0] A;
+reg  [2:0] Shift;
+reg  [2:0] Mode;
+wire [7:0] Y;
+integer i,j;
+  data_alignment_unit #(8) dut (A,Shift,Mode,Y);
+initial begin
+    $dumpvars(1,tb);
+    A = 8'b10110010;
+    for(j=0; j<8; j=j+1)
+    begin  Mode = j;
+      if(j < 4)  begin
+            for(i=0; i<4; i=i+1)
+            begin Shift = i;#10;
+                case(Mode)
+            0: $display("T=%0t | LEFT SHIFT   | Shift=%0d | A=%b (%0d) | Y=%b (%0d)",
+                                $time,Shift,A,A,Y,Y);
+            1: $display("T=%0t | RIGHT SHIFT  | Shift=%0d | A=%b (%0d) | Y=%b (%0d)", 
+                                $time,Shift,A,A,Y,Y);          
+            2: $display("T=%0t | ROTATE LEFT  | Shift=%0d | A=%b (%0d) | Y=%b (%0d)",
+                      $time,Shift,A,A,Y,Y);
+            3: $display("T=%0t | ROTATE RIGHT | Shift=%0d | A=%b (%0d) | Y=%b (%0d)",
+                                $time,Shift,A,A,Y,Y);
+                endcase
+            end end
+else        begin
+            Shift = 0; #10;
+            case(Mode)
+                4: $display("T=%0t | ROL BY 1     | A=%b (%0d) | Y=%b (%0d)",
+                            $time,A,A,Y,Y);
+                5: $display("T=%0t | ROR BY 1     | A=%b (%0d) | Y=%b (%0d)",
+                            $time,A,A,Y,Y);
+              6: $display("T=%0t | PASS THROUGH | A=%b (%0d) | Y=%b (%0d)",  	 
+                          $time,A,A,Y,Y);
+                7: $display("T=%0t | BITWISE NOT  | A=%b (%0d) | Y=%b (%0d)",
+                            $time,A,A,Y,Y);
+            endcase
+       end end
+    $finish;
+end
+endmodule
