@@ -1,0 +1,110 @@
+module jk_ff (
+    input        clk,
+    input        rst_n,      // Active low reset
+    input        j,
+    input        k,
+    output reg   q
+);
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+        q <= 1'b0;           // Reset
+    else begin
+        case ({j, k})
+            2'b00: q <= q;   // Hold
+            2'b01: q <= 1'b0;// Reset
+            2'b10: q <= 1'b1;// Set
+            2'b11: q <= ~q;  // Toggle
+        endcase
+    end
+end
+
+endmodule
+
+
+`timescale 1ns/1ps
+
+module tb_jk_ff;
+
+reg clk, rst_n, j, k;
+wire q;
+
+jk_ff dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .j(j),
+    .k(k),
+    .q(q)
+);
+
+initial begin
+    clk = 0;
+    rst_n = 0;
+    j = 0;
+    k = 0;
+
+    #15 rst_n = 1;      // Release reset
+    #10 j = 0; k = 0;
+    #10 j = 0; k = 1;
+    #10 j = 1; k = 0;
+    #10 j = 1; k = 1;
+    #50 $finish;
+end
+
+always #5 clk = ~clk;   // 100MHz clk
+
+endmodule
+
+
+module t_ff (
+    input        clk,
+    input        rst_n,      // Active low reset
+    input        t,
+    output reg   q
+);
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+        q <= 1'b0;           // Reset
+    else begin
+        if (t)
+            q <= ~q;         // Toggle
+        else
+            q <= q;          // Hold
+    end
+end
+
+endmodule
+
+
+`timescale 1ns/1ps
+
+module tb_t_ff;
+
+reg clk, rst_n, t;
+wire q;
+
+t_ff dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .t(t),
+    .q(q)
+);
+
+initial begin
+    clk = 0;
+    rst_n = 0;
+    t = 0;
+
+    #15 rst_n = 1;
+    #10 t = 0;
+    #10 t = 1;
+    #10 t = 1;
+    #10 t = 0;
+    #10 t = 1;
+    #50 $finish;
+end
+
+always #5 clk = ~clk;
+
+endmodule
