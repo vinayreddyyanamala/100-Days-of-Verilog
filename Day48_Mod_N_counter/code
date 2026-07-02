@@ -1,0 +1,60 @@
+modn_counter.v
+module modn_counter #(
+    parameter N = 6              // Modulus (N)
+)(
+    input wire clk,
+    input wire rst_n,            // Active low reset
+    output reg [$clog2(N)-1:0] q // Counter output
+);
+
+// Counter Register
+localparam WIDTH = $clog2(N);    // Minimum bits
+localparam [WIDTH-1:0] MAX_COUNT = N-1;
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+        q <= {WIDTH{1'b0}};          // Reset to 0
+    else if (q == MAX_COUNT)
+        q <= {WIDTH{1'b0}};          // Rollover to 0
+    else
+        q <= q + 1'b1;               // Increment
+end
+
+endmodule
+tb_modn_counter.v
+`timescale 1ns/1ps
+
+module tb_modn_counter;
+
+parameter N = 6;
+localparam WIDTH = $clog2(N);
+
+reg clk, rst_n;
+wire [WIDTH-1:0] q;
+
+// DUT Instantiation
+modn_counter #(N) dut (
+    .clk   (clk),
+    .rst_n (rst_n),
+    .q     (q)
+);
+
+// Clock Generation (100MHz)
+initial clk = 0;
+always #5 clk = ~clk;      // 10ns period
+
+// Stimulus
+initial begin
+    rst_n = 0;
+    #20 rst_n = 1;          // Release Reset
+    #200 $finish;           // End simulation
+end
+
+// Monitor
+initial begin
+    $display("Time\t rst_n\t q(dec)\t q(bin)");
+    $monitor("%0t\t %b\t %0d\t %b",
+             $time, rst_n, q, q);
+end
+
+endmodule
