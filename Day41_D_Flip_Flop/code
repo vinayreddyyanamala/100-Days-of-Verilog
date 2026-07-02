@@ -1,0 +1,40 @@
+dff.v
+module dff (
+    input        clk,
+    input        reset,     // Active high synchronous reset
+    input        d,
+    output reg   q,
+    output wire  q_bar);
+always @(posedge clk) begin
+    if (reset)
+        q <= 1'b0;
+    else
+        q <= d;
+end
+assign q_bar = ~q;
+endmodule
+
+
+tb_dff.v
+`timescale 1ns/1ps
+module tb_dff;
+reg clk, reset, d;
+wire q, q_bar;
+dff dut (
+    .clk(clk),
+    .reset(reset),
+    .d(d),
+    .q(q),
+    .q_bar(q_bar));
+always #5 clk = ~clk;
+initial begin
+    $dumpvars(0, tb_dff);
+    clk = 0;
+    reset = 1;
+    #10 reset = 0;
+    #10 d = 1;
+    #10 d = 0;
+    #10 d = 1;
+    #20 $finish;
+end
+endmodule
