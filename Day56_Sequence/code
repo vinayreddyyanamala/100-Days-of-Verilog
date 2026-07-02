@@ -1,0 +1,118 @@
+1. RTL (seq_101.v)
+module seq_101(
+    input clk,
+    input rst_n,
+    input din,
+    output reg dout,
+    output reg [1:0] state
+);
+
+reg [1:0] next_state;
+
+// State Encoding
+localparam S0 = 2'b00;   // Reset
+localparam S1 = 2'b01;   // Got '1'
+localparam S2 = 2'b10;   // Got '10'
+localparam UNUSED = 2'b11;
+
+// State Register
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+        state <= S0;
+    else
+        state <= next_state;
+end
+
+// Next State + Output Logic
+always @(*) begin
+    next_state = state;
+    dout = 1'b0;
+
+    case (state)
+
+        S0: begin
+            if (din)
+                next_state = S1;
+            else
+                next_state = S0;
+        end
+
+        S1: begin
+            if (din)
+                next_state = S1;
+            else
+                next_state = S2;
+        end
+
+        S2: begin
+            if (din) begin
+                next_state = S1;   // Overlap
+                dout = 1'b1;       // Sequence detected
+            end
+            else
+                next_state = S0;
+        end
+
+        default: begin
+            next_state = S0;
+            dout = 1'b0;
+        end
+
+    endcase
+end
+
+endmodule
+2. Testbench (tb_seq_101.v)
+`timescale 1ns/1ps
+
+module tb_seq_101;
+
+reg clk;
+reg rst_n;
+reg din;
+
+wire dout;
+wire [1:0] state;
+
+// DUT
+seq_101 dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .din(din),
+    .dout(dout),
+    .state(state)
+);
+
+// Clock Generation (10ns period)
+initial clk = 0;
+always #5 clk = ~clk;
+
+// Stimulus
+initial begin
+
+    rst_n = 0;
+    din = 0;
+
+    #12;
+    rst_n = 1;
+
+    // Input sequence : 1 0 1 0 1
+    #10 din = 1;   // t0
+    #10 din = 0;   // t1
+    #10 din = 1;   // t2 -> detect
+    #10 din = 0;   // t3
+    #10 din = 1;   // t4 -> detect again
+
+    #20;
+    $finish;
+
+end
+
+// Monitor
+initial begin
+    $display("Time\tclk\tdin\tstate\tdout");
+    $monitor("%0t\t%b\t%b\t%b\t%b",
+             $time, clk, din, state, dout);
+end
+
+endmodule
