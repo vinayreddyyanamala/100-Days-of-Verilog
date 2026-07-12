@@ -1,0 +1,121 @@
+`timescale 1ns/1ps
+
+module vending_machine (
+
+    input  wire clk,
+    input  wire rst_n,
+    input  wire coin_inserted,
+    input  wire [1:0] coin,      // 01 = Rs1, 10 = Rs2
+
+    output reg dispense_a,
+    output reg dispense_b,
+    output reg return_1rs,
+    output reg return_2rs
+
+);
+
+//-----------------------------------------------------
+// State Encoding
+//-----------------------------------------------------
+localparam S0 = 4'd0;   // Rs0
+localparam S1 = 4'd1;   // Rs1
+localparam S2 = 4'd2;   // Rs2
+localparam S3 = 4'd3;   // Rs3
+localparam S4 = 4'd4;   // Rs4 -> Product A
+localparam S5 = 4'd5;   // Rs5
+localparam S6 = 4'd6;   // Rs6
+localparam S7 = 4'd7;   // Rs7 -> Product B
+localparam S8 = 4'd8;   // Rs8 -> Product B + Return Rs1
+localparam S9 = 4'd9;   // Rs9 -> Product B + Return Rs2
+
+reg [3:0] curr_state, next_state;
+
+//-----------------------------------------------------
+// State Register
+//-----------------------------------------------------
+always @(posedge clk or negedge rst_n) begin
+
+    if(!rst_n)
+        curr_state <= S0;
+    else
+        curr_state <= next_state;
+
+end
+
+//-----------------------------------------------------
+// Next-State Logic
+//-----------------------------------------------------
+always @(*) begin
+
+    next_state = curr_state;
+
+    if(coin_inserted) begin
+
+        case(curr_state)
+
+            S0: if(coin==2'b01) next_state=S1;
+                else if(coin==2'b10) next_state=S2;
+
+            S1: if(coin==2'b01) next_state=S2;
+                else if(coin==2'b10) next_state=S3;
+
+            S2: if(coin==2'b01) next_state=S3;
+                else if(coin==2'b10) next_state=S4;
+
+            S3: if(coin==2'b01) next_state=S4;
+                else if(coin==2'b10) next_state=S5;
+
+            S5: if(coin==2'b01) next_state=S6;
+                else if(coin==2'b10) next_state=S7;
+
+            S6: if(coin==2'b01) next_state=S7;
+                else if(coin==2'b10) next_state=S8;
+
+            S7: if(coin==2'b01) next_state=S8;
+                else if(coin==2'b10) next_state=S9;
+
+            default: next_state=S0;
+
+        endcase
+
+    end
+
+    // Return to idle after vending
+    if(curr_state==S4 || curr_state==S8 || curr_state==S9)
+        next_state=S0;
+
+end
+
+//-----------------------------------------------------
+// Output Logic (Moore FSM)
+//-----------------------------------------------------
+always @(*) begin
+
+    dispense_a = 0;
+    dispense_b = 0;
+    return_1rs = 0;
+    return_2rs = 0;
+
+    case(curr_state)
+
+        S4: dispense_a = 1;
+
+        S7: dispense_b = 1;
+
+        S8: begin
+            dispense_b = 1;
+            return_1rs = 1;
+        end
+
+        S9: begin
+            dispense_b = 1;
+            return_2rs = 1;
+        end
+
+        default: ;
+
+    endcase
+
+end
+
+endmodule
