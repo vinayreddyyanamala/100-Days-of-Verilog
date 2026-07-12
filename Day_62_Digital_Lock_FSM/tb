@@ -1,0 +1,95 @@
+`timescale 1ns/1ps
+
+module tb_digital_lock;
+
+reg clk;
+reg rst;
+reg bit_in;
+
+wire unlock;
+
+// DUT
+digital_lock dut(
+
+    .clk(clk),
+    .rst(rst),
+    .bit_in(bit_in),
+    .unlock(unlock)
+
+);
+
+//--------------------------------------------------
+// Clock Generation (10 ns)
+//--------------------------------------------------
+initial clk = 0;
+always #5 clk = ~clk;
+
+//--------------------------------------------------
+// Task to Apply One Bit
+//--------------------------------------------------
+task enter_bit;
+
+input b;
+
+begin
+
+    bit_in = b;
+
+    @(posedge clk);
+    #1;
+
+end
+
+endtask
+
+//--------------------------------------------------
+// Test Sequence
+//--------------------------------------------------
+initial begin
+
+    $dumpfile("digital_lock.vcd");
+    $dumpvars(0,tb_digital_lock);
+
+    rst = 1;
+    bit_in = 0;
+
+    #12;
+    rst = 0;
+
+    //---------------- Correct Password : 1011 ----------------
+    enter_bit(1);
+    enter_bit(0);
+    enter_bit(1);
+    enter_bit(1);
+
+    //---------------- Wrong Password : 1001 ------------------
+    enter_bit(1);
+    enter_bit(0);
+    enter_bit(0);
+    enter_bit(1);
+
+    //---------------- Correct Password Again -----------------
+    enter_bit(1);
+    enter_bit(0);
+    enter_bit(1);
+    enter_bit(1);
+
+    #20;
+    $finish;
+
+end
+
+//--------------------------------------------------
+// Monitor
+//--------------------------------------------------
+initial begin
+
+    $display("Time\tbit_in\tunlock");
+    $monitor("%0t\t%b\t%b",
+             $time,
+             bit_in,
+             unlock);
+
+end
+
+endmodule
