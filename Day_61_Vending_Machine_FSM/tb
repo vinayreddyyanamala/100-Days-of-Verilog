@@ -1,0 +1,121 @@
+`timescale 1ns/1ps
+
+module tb_vending_machine;
+
+reg clk;
+reg rst_n;
+reg coin_inserted;
+reg [1:0] coin;
+
+wire dispense_a;
+wire dispense_b;
+wire return_1rs;
+wire return_2rs;
+
+// DUT
+vending_machine uut(
+
+    .clk(clk),
+    .rst_n(rst_n),
+    .coin_inserted(coin_inserted),
+    .coin(coin),
+
+    .dispense_a(dispense_a),
+    .dispense_b(dispense_b),
+    .return_1rs(return_1rs),
+    .return_2rs(return_2rs)
+
+);
+
+//--------------------------------------------------
+// Clock Generation
+//--------------------------------------------------
+initial clk = 0;
+always #5 clk = ~clk;
+
+//--------------------------------------------------
+// Coin Insert Task
+//--------------------------------------------------
+task insert_coin;
+
+input [1:0] value;
+
+begin
+    coin_inserted = 1;
+    coin = value;
+
+    @(posedge clk);
+
+    #1;
+    coin_inserted = 0;
+
+    @(posedge clk);
+
+    #1;
+
+end
+
+endtask
+
+//--------------------------------------------------
+// Stimulus
+//--------------------------------------------------
+initial begin
+
+    $dumpfile("vending_machine.vcd");
+    $dumpvars(0,tb_vending_machine);
+
+    rst_n = 0;
+    coin_inserted = 0;
+    coin = 2'b00;
+
+    @(posedge clk);
+    #1;
+
+    rst_n = 1;
+
+    // Product A (Rs4)
+    insert_coin(2'b10);   // +2
+    insert_coin(2'b10);   // +2 -> Dispense A
+
+    // Product B (Rs7)
+    insert_coin(2'b10);   // +2
+    insert_coin(2'b10);   // +2
+    insert_coin(2'b10);   // +2
+    insert_coin(2'b01);   // +1 -> Dispense B
+
+    // Product B + Return Rs1
+    insert_coin(2'b10);
+    insert_coin(2'b10);
+    insert_coin(2'b10);
+    insert_coin(2'b10);   // Rs8
+
+    // Product B + Return Rs2
+    insert_coin(2'b10);
+    insert_coin(2'b10);
+    insert_coin(2'b10);
+    insert_coin(2'b01);
+    insert_coin(2'b10);   // Rs9
+
+    #100;
+
+    $finish;
+
+end
+
+//--------------------------------------------------
+// Monitor
+//--------------------------------------------------
+initial begin
+
+$display("Time\tState Signals");
+$monitor("%0t\tA=%b B=%b R1=%b R2=%b",
+          $time,
+          dispense_a,
+          dispense_b,
+          return_1rs,
+          return_2rs);
+
+end
+
+endmodule
